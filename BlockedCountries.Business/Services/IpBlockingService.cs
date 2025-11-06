@@ -12,30 +12,24 @@ public class IpBlockingService : IIpBlockingService
     private readonly IGeolocationService _geolocationService;
     private readonly ICountryManagementService _countryManagementService;
     private readonly IBlockedAttemptRepository _attemptRepository;
-    private readonly IIpValidationService _ipValidationService;
     private readonly ILogger<IpBlockingService> _logger;
 
     public IpBlockingService(
         IGeolocationService geolocationService,
         ICountryManagementService countryManagementService,
         IBlockedAttemptRepository attemptRepository,
-        IIpValidationService ipValidationService,
         ILogger<IpBlockingService> logger)
     {
         _geolocationService = geolocationService;
         _countryManagementService = countryManagementService;
         _attemptRepository = attemptRepository;
-        _ipValidationService = ipValidationService;
+      
         _logger = logger;
     }
 
-    public async Task<ServiceResult<IpLookupResponse>> LookupIpAddressAsync(string? ipAddress, HttpContext httpContext)
+    public async Task<ServiceResult<IpLookupResponse>> LookupIpAddressAsync(string? ipAddress)
     {
-        // If no IP provided, use caller's IP
-        if (string.IsNullOrWhiteSpace(ipAddress))
-        {
-            ipAddress = _ipValidationService.GetClientIpAddress(httpContext);
-        }
+       
 
         var result = await _geolocationService.LookupIpAddressAsync(ipAddress);
 
@@ -48,12 +42,9 @@ public class IpBlockingService : IIpBlockingService
         return ServiceResult<IpLookupResponse>.Success(result);
     }
 
-    public async Task<ServiceResult<CheckBlockResponse>> CheckIpBlockStatusAsync(HttpContext httpContext)
+    public async Task<ServiceResult<CheckBlockResponse>> CheckIpBlockStatusAsync(string ipAddress,HttpContext httpContext)
     {
-        // Get caller's IP address
-        var ipAddress = _ipValidationService.GetClientIpAddress(httpContext);
-
-        // Lookup country for this IP
+        
         var lookupResult = await _geolocationService.LookupIpAddressAsync(ipAddress);
 
         var countryCode = lookupResult?.CountryCode ?? "Unknown";
@@ -64,7 +55,7 @@ public class IpBlockingService : IIpBlockingService
             isBlocked = await _countryManagementService.IsCountryBlockedAsync(countryCode);
         }
 
-        // Log the attempt regardless of outcome
+        
         var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
         var attempt = new BlockedAttempt
         {

@@ -6,7 +6,7 @@ namespace BlockedCountries.Business.Services;
 
 public interface IIpBlockingService
 {
-    Task<ServiceResult<IpLookupResponse>> LookupIpAddressAsync(string? ipAddress, HttpContext httpContext);
-    Task<ServiceResult<CheckBlockResponse>> CheckIpBlockStatusAsync(HttpContext httpContext);
+    Task<ServiceResult<IpLookupResponse>> LookupIpAddressAsync(string? ipAddress);
+    Task<ServiceResult<CheckBlockResponse>> CheckIpBlockStatusAsync(string ipAddress,HttpContext httpContext);
 }
 

@@ -1,5 +1,5 @@
-using BlockedCountries.Api.Middleware;
-using BlockedCountries.Api.Services;
+
+
 using BlockedCountries.Business.Configuration;
 using BlockedCountries.Business.Services;
 using BlockedCountries.Data.Repositories;
@@ -7,6 +7,7 @@ using Hangfire;
 using Hangfire.MemoryStorage;
 using BlockedCountries.Api.Jobs;
 using Serilog;
+using BlockedCountries.Api.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Caching
+builder.Services.AddMemoryCache();
+
 // Configuration
 builder.Services.Configure<GeolocationApiConfig>(
     builder.Configuration.GetSection(GeolocationApiConfig.SectionName));
@@ -49,11 +53,20 @@ builder.Services.AddHttpClient<IGeolocationService, GeolocationService>(client =
         client.BaseAddress = new Uri(config.BaseUrl);
         client.Timeout = TimeSpan.FromSeconds(30);
     }
-});
+
+   
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("BlockedCountries/1.0 (+https://example.local)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+})
+    .AddHttpMessageHandler<GeolocationRateLimitHandler>()
+    .AddHttpMessageHandler<GeolocationCacheHandler>();
+
+builder.Services.AddSingleton<GeolocationRateLimitHandler>();
+builder.Services.AddSingleton<GeolocationCacheHandler>();
 builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();
 builder.Services.AddScoped<IIpBlockingService, IpBlockingService>();
 builder.Services.AddScoped<IBlockedAttemptService, BlockedAttemptService>();
-builder.Services.AddScoped<IIpValidationService, IpValidationService>();
+
 
 
 builder.Services.AddHangfire(config =>
@@ -76,8 +89,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Configure custom middleware to extract user IP address
-app.UseClientIpMiddleware();
+
 
 // Serilog request logging
 app.UseSerilogRequestLogging();

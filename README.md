@@ -40,29 +40,6 @@ Data Models
 Cross-cutting: Serilog logging, configuration binding, Hangfire jobs, HTTP client (geolocation) with rate limiter + cache handler.
 ```
 
-Optional Mermaid (if your viewer supports it):
-
-```mermaid
-flowchart TD
-  C[Client] --> P[Presentation: Controllers]
-  P --> B[Business: Services]
-  B --> R[Data: Repositories]
-  R --> D[(Data Models)]
-  B --> G[HTTP Client: GeolocationService]
-  subgraph Cross-Cutting
-    L[Serilog]
-    H[Hangfire]
-    CFG[Configuration]
-    RL[RateLimit + Cache Handlers]
-  end
-  P --> L
-  B --> L
-  B --> H
-  G --> RL
-  CFG --- P
-  CFG --- B
-  CFG --- G
-```
 
 ## Cross‑Cutting Features
 

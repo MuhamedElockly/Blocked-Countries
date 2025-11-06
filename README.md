@@ -1,5 +1,8 @@
 ## Blocked Countries – Overview and Guide
 
+[![YouTube](https://img.icons8.com/color/48/000000/youtube-play.png)](https://www.youtube.com/your-video-link-here)  
+**Watch the overview video on YouTube**
+
 This solution provides an API to block traffic by country, look up IP geolocation, record access attempts, and manage country block lists. It uses a layered architecture with structured logging, lightweight rate limiting/caching for outbound geolocation calls, and background jobs for maintenance.
 
 ## Solution Structure
@@ -40,29 +43,6 @@ Data Models
 Cross-cutting: Serilog logging, configuration binding, Hangfire jobs, HTTP client (geolocation) with rate limiter + cache handler.
 ```
 
-Optional Mermaid (if your viewer supports it):
-
-```mermaid
-flowchart TD
-  C[Client] --> P[Presentation: Controllers]
-  P --> B[Business: Services]
-  B --> R[Data: Repositories]
-  R --> D[(Data Models)]
-  B --> G[HTTP Client: GeolocationService]
-  subgraph Cross-Cutting
-    L[Serilog]
-    H[Hangfire]
-    CFG[Configuration]
-    RL[RateLimit + Cache Handlers]
-  end
-  P --> L
-  B --> L
-  B --> H
-  G --> RL
-  CFG --- P
-  CFG --- B
-  CFG --- G
-```
 
 ## Cross‑Cutting Features
 
@@ -206,25 +186,5 @@ Base path: `/api`
   - `BaseUrl`: base URL of the geolocation service
   - `RateLimitPerMinute`: used by `GeolocationService`
 - `Serilog`: sinks/levels/enrichment
-
-## Build & Run
-
-- Requirements: .NET 8 SDK
-- Build: `dotnet build`
-- Run API: `dotnet run --project "Blocked Countries/Blocked Countries.csproj"`
-- Swagger (Dev): `https://localhost:{port}/swagger`
-
-## Tests
-
-- Test project: `BlockedCountries.Tests`
-- Run: `dotnet test "BlockedCountries.Tests/BlockedCountries.Tests.csproj"`
-- Coverage (optional): add coverlet or your preferred tool
-
-## Notes & Extensibility
-
-- Replace Hangfire memory storage and in‑memory repositories with persistent stores before production
-- Replace `GeolocationService` base URL and add API key headers if required by the provider
-- Tighten rate‑limit/caching strategies as needed (e.g., Polly, distributed cache)
-- Expand model validation/DTOs and add authorization if exposing publicly
 
 

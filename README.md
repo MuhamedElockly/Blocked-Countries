@@ -1,5 +1,8 @@
 ## Blocked Countries – Overview and Guide
 
+[![YouTube](https://img.icons8.com/color/48/000000/youtube-play.png)](https://www.youtube.com/your-video-link-here)  
+**Watch the overview video on YouTube**
+
 This solution provides an API to block traffic by country, look up IP geolocation, record access attempts, and manage country block lists. It uses a layered architecture with structured logging, lightweight rate limiting/caching for outbound geolocation calls, and background jobs for maintenance.
 
 ## Solution Structure

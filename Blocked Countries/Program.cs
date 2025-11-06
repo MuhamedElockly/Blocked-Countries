@@ -54,15 +54,14 @@ builder.Services.AddHttpClient<IGeolocationService, GeolocationService>(client =
         client.Timeout = TimeSpan.FromSeconds(30);
     }
 
-   
+
     client.DefaultRequestHeaders.UserAgent.ParseAdd("BlockedCountries/1.0 (+https://example.local)");
     client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 })
-    .AddHttpMessageHandler<GeolocationRateLimitHandler>()
-    .AddHttpMessageHandler<GeolocationCacheHandler>();
+    .AddHttpMessageHandler<GeolocationRateLimitHandler>();
+
 
 builder.Services.AddSingleton<GeolocationRateLimitHandler>();
-builder.Services.AddSingleton<GeolocationCacheHandler>();
 builder.Services.AddScoped<ICountryManagementService, CountryManagementService>();
 builder.Services.AddScoped<IIpBlockingService, IpBlockingService>();
 builder.Services.AddScoped<IBlockedAttemptService, BlockedAttemptService>();

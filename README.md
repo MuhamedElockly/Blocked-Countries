@@ -15,6 +15,55 @@ This solution provides an API to block traffic by country, look up IP geolocatio
 - **Tests**: `BlockedCountries.Tests`
   - xUnit tests for controllers and services
 
+## Architecture Overview
+
+High-level component view (request → response):
+
+```
+Client
+  |
+  v
+Presentation (Web API Controllers)
+  |
+  |  orchestrate
+  v
+Business Services (domain logic)
+  |
+  |  query/commands
+  v
+Repositories (data access, in-memory)
+  |
+  |  persist/read domain models
+  v
+Data Models
+
+Cross-cutting: Serilog logging, configuration binding, Hangfire jobs, HTTP client (geolocation) with rate limiter + cache handler.
+```
+
+Optional Mermaid (if your viewer supports it):
+
+```mermaid
+flowchart TD
+  C[Client] --> P[Presentation: Controllers]
+  P --> B[Business: Services]
+  B --> R[Data: Repositories]
+  R --> D[(Data Models)]
+  B --> G[HTTP Client: GeolocationService]
+  subgraph Cross-Cutting
+    L[Serilog]
+    H[Hangfire]
+    CFG[Configuration]
+    RL[RateLimit + Cache Handlers]
+  end
+  P --> L
+  B --> L
+  B --> H
+  G --> RL
+  CFG --- P
+  CFG --- B
+  CFG --- G
+```
+
 ## Cross‑Cutting Features
 
 - **Serilog** (structured logging)
@@ -37,6 +86,41 @@ This solution provides an API to block traffic by country, look up IP geolocatio
   - Recurring job: `TemporalBlockCleanupJob` every 5 minutes to purge expired temporal blocks
 - **Configuration**
   - Strongly typed via `GeolocationApiConfig` (BaseUrl, RateLimitPerMinute, etc.)
+
+## Repositories Layer (Data/Persistence)
+
+Interfaces live in `BlockedCountries.Data.Repositories`, with simple in-memory implementations suitable for development/testing. Swap these with persistent stores (SQL/NoSQL) in production.
+
+- `ICountryRepository`
+  - `Task<CountryInfo?> GetBlockedCountryAsync(string countryCode)`
+  - `Task<bool> AddBlockedCountryAsync(CountryInfo country)`
+  - `Task<bool> RemoveBlockedCountryAsync(string countryCode)`
+  - `Task<IEnumerable<CountryInfo>> GetAllBlockedCountriesAsync()`
+  - `Task<bool> AddTemporalBlockAsync(CountryInfo country)`
+  - Behavior: stores blocked (permanent) and temporal records. Temporal entries have `IsTemporalBlock = true` and `ExpiresAt` set.
+
+- `IBlockedAttemptRepository`
+  - `Task AddAttemptAsync(BlockedAttempt attempt)`
+  - `Task<IEnumerable<BlockedAttempt>> GetAttemptsAsync()`
+  - Behavior: append-only log of attempts with `IpAddress`, `CountryCode`, `IsBlocked`, `Timestamp`, `UserAgent`.
+
+Data models (in `BlockedCountries.Data.Models`):
+- `CountryInfo { CountryCode, CountryName, BlockedAt, IsTemporalBlock, ExpiresAt }`
+- `BlockedAttempt { IpAddress, Timestamp, CountryCode, IsBlocked, UserAgent }`
+
+How the business layer uses repositories:
+- `CountryManagementService`
+  - Validates inputs and ISO2 country codes
+  - Upserts via `ICountryRepository` (permanent or temporal)
+  - Paginates and filters expired temporal blocks at query time
+- `IpBlockingService`
+  - Obtains `IpLookupResponse` via `IGeolocationService`
+  - Computes `IsBlocked` with `ICountryManagementService.IsCountryBlockedAsync`
+  - Writes audit to `IBlockedAttemptRepository`
+
+Repository swap guidance:
+- Introduce new implementations (e.g., `SqlCountryRepository`) and register via DI instead of the in-memory ones.
+- Ensure `GetAllBlockedCountriesAsync` supports pagination/filters at the DB layer for scale.
 
 ## Dependency Injection (selected registrations)
 
@@ -94,6 +178,15 @@ Base path: `/api`
   - Throttles outbound requests (semaphore + minimal interval)
   - Parses JSON from the remote API
   - Returns simplified `IpLookupResponse` or `null` on error/limit
+
+### Request Lifecycle (Example: GET /api/ip/check-block)
+
+1) Controller resolves client IP (from `RemoteIpAddress`).
+2) Calls `IpBlockingService.CheckIpBlockStatusAsync(ip, HttpContext)`.
+3) Service calls `IGeolocationService.LookupIpAddressAsync(ip)`.
+4) Service asks `ICountryManagementService.IsCountryBlockedAsync(countryCode)`.
+5) Service writes `BlockedAttempt` via `IBlockedAttemptRepository`.
+6) Returns `CheckBlockResponse` to controller → HTTP 200.
 
 ## Logging
 

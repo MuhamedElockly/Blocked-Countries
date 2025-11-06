@@ -184,24 +184,4 @@ Base path: `/api`
   - `RateLimitPerMinute`: used by `GeolocationService`
 - `Serilog`: sinks/levels/enrichment
 
-## Build & Run
-
-- Requirements: .NET 8 SDK
-- Build: `dotnet build`
-- Run API: `dotnet run --project "Blocked Countries/Blocked Countries.csproj"`
-- Swagger (Dev): `https://localhost:{port}/swagger`
-
-## Tests
-
-- Test project: `BlockedCountries.Tests`
-- Run: `dotnet test "BlockedCountries.Tests/BlockedCountries.Tests.csproj"`
-- Coverage (optional): add coverlet or your preferred tool
-
-## Notes & Extensibility
-
-- Replace Hangfire memory storage and in‑memory repositories with persistent stores before production
-- Replace `GeolocationService` base URL and add API key headers if required by the provider
-- Tighten rate‑limit/caching strategies as needed (e.g., Polly, distributed cache)
-- Expand model validation/DTOs and add authorization if exposing publicly
-
 

@@ -9,3 +9,4 @@ public class BlockedAttempt
     public string UserAgent { get; set; } = string.Empty;
 }
 
+

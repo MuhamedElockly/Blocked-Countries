@@ -10,3 +10,4 @@ public class GeolocationApiConfig
     public int RateLimitPerMinute { get; set; } = 60;
 }
 
+

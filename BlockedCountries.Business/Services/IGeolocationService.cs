@@ -7,3 +7,4 @@ public interface IGeolocationService
     Task<IpLookupResponse?> LookupIpAddressAsync(string ipAddress);
 }
 
+

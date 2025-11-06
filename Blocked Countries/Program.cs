@@ -3,8 +3,19 @@ using BlockedCountries.Api.Services;
 using BlockedCountries.Business.Configuration;
 using BlockedCountries.Business.Services;
 using BlockedCountries.Data.Repositories;
+using Hangfire;
+using Hangfire.MemoryStorage;
+using BlockedCountries.Api.Jobs;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .CreateLogger();
+builder.Host.UseSerilog(Log.Logger);
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -44,12 +55,17 @@ builder.Services.AddScoped<IIpBlockingService, IpBlockingService>();
 builder.Services.AddScoped<IBlockedAttemptService, BlockedAttemptService>();
 builder.Services.AddScoped<IIpValidationService, IpValidationService>();
 
-// Background Service
-builder.Services.AddHostedService<TemporalBlockCleanupService>();
+
+builder.Services.AddHangfire(config =>
+{
+    config.UseSimpleAssemblyNameTypeSerializer();
+    config.UseRecommendedSerializerSettings();
+    config.UseMemoryStorage();
+});
+builder.Services.AddHangfireServer();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -63,10 +79,22 @@ if (app.Environment.IsDevelopment())
 // Configure custom middleware to extract user IP address
 app.UseClientIpMiddleware();
 
+// Serilog request logging
+app.UseSerilogRequestLogging();
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Register recurring jobs
+var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
+recurringJobs.AddOrUpdate<TemporalBlockCleanupJob>(
+    "temporal-block-cleanup",
+    job => job.Run(),
+    "*/5 * * * *",
+    TimeZoneInfo.Utc
+);
 
 app.Run();

@@ -7,3 +7,4 @@ public interface IBlockedAttemptService
     Task<ServiceResult<PagedResponse<BlockedAttemptResponse>>> GetBlockedAttemptsAsync(int page, int pageSize);
 }
 
+

@@ -6,3 +6,4 @@ public class TemporalBlockRequest
     public int DurationMinutes { get; set; }
 }
 
+

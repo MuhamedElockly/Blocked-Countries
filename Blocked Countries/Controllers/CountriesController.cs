@@ -16,9 +16,7 @@ public class CountriesController : ControllerBase
         _countryManagementService = countryManagementService;
     }
 
-    /// <summary>
-    /// Add a country to the blocked list
-    /// </summary>
+   
     [HttpPost("block")]
     [ProducesResponseType(typeof(BlockedCountryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -68,9 +66,7 @@ public class CountriesController : ControllerBase
         return Ok(result.Data);
     }
 
-    /// <summary>
-    /// Temporarily block a country for a specific duration
-    /// </summary>
+   
     [HttpPost("temporal-block")]
     [ProducesResponseType(typeof(BlockedCountryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

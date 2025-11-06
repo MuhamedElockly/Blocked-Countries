@@ -19,7 +19,7 @@ public class BlockedAttemptService : IBlockedAttemptService
 
     public async Task<ServiceResult<PagedResponse<BlockedAttemptResponse>>> GetBlockedAttemptsAsync(int page, int pageSize)
     {
-        // Normalize pagination parameters
+        
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 10;
 

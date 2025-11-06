@@ -8,3 +8,4 @@ public interface IBlockedAttemptRepository
     Task<IEnumerable<BlockedAttempt>> GetAllAttemptsAsync();
 }
 
+

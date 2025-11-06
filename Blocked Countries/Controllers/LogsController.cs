@@ -15,9 +15,7 @@ public class LogsController : ControllerBase
         _attemptService = attemptService;
     }
 
-    /// <summary>
-    /// Get all blocked attempts with pagination
-    /// </summary>
+   
     [HttpGet("blocked-attempts")]
     [ProducesResponseType(typeof(PagedResponse<BlockedAttemptResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBlockedAttempts(

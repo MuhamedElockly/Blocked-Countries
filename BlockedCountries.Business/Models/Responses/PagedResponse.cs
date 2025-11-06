@@ -9,3 +9,4 @@ public class PagedResponse<T>
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 }
 
+
